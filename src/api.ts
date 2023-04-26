@@ -40,6 +40,19 @@ export const getAllMarkets = async () => {
   return allMarkets
 }
 
+export const getSomeMarkets = async () => {
+  const someMarkets = []
+  let before: string | undefined = undefined
+
+  const markets: LiteMarket[] = await getMarkets(1000, before)
+
+  someMarkets.push(...markets)
+  before = markets[markets.length - 1].id
+  console.log('Loaded', someMarkets.length, 'markets', 'before', before)
+
+  return someMarkets
+}
+
 export const getMarketBySlug = async (slug: string) => {
   const market: FullMarket = await fetch(`${API_URL}/slug/${slug}`).then(
     (res) => res.json()
@@ -47,16 +60,35 @@ export const getMarketBySlug = async (slug: string) => {
   return market
 }
 
-const getBets = async (
-  username: string,
-  limit = 1000,
-  before: string | undefined = undefined
-) => {
-  const bets: Bet[] = await fetch(
-    before
-      ? `${API_URL}/bets?username=${username}&limit=${limit}&before=${before}`
-      : `${API_URL}/bets?username=${username}&limit=${limit}`
-  ).then((res) => res.json())
+export const getBets = async ({
+  username = undefined,
+  limit = 100,
+  contractId = undefined,
+  contractSlug = undefined,
+  before = undefined,
+}: {
+  username?: string;
+  limit?: number;
+  contractId?: string;
+  contractSlug?: string;
+  before?: string;
+}) => {
+  let url = API_URL + "/bets?"
+  if (username) {
+    url += `username=${username}&`
+  }
+  if (contractId) {
+    url += `contractId=${contractId}&`
+  }
+  if (contractSlug) {
+    url += `contractSlug=${contractSlug}&`
+  }
+  if (before) {
+    url += `before=${before}&`
+  }
+  url += `limit=${limit}`
+  // console.log("pinging: ", url)
+  const bets: Bet[] = await fetch(url).then((res) => res.json())
   return bets
 }
 
@@ -65,7 +97,7 @@ export const getAllBets = async (username: string) => {
   let before: string | undefined = undefined
 
   while (true) {
-    const bets: Bet[] = await getBets(username, 1000, before)
+    const bets: Bet[] = await getBets({ username: username, before: before});
 
     allBets.push(...bets)
     before = bets[bets.length - 1].id

@@ -4,6 +4,8 @@ import {
   cancelBet,
   getAllBets,
   getAllMarkets,
+  getBets,
+  getSomeMarkets,
   getFullMarket,
   placeBet,
 } from './api'
@@ -20,27 +22,29 @@ const main = async () => {
   if (!key) {
     throw new Error('Please set MANIFOLD_API_KEY variable in .env file.')
   }
-  const myBets = await getAllBets(username)
-  const myContractIds = uniq(myBets.map((bet) => bet.contractId))
+  // const myBets = await getAllBets(username)
+  // const myContractIds = uniq(myBets.map((bet) => bet.contractId))
 
-  console.log(
-    'Got bets',
-    myBets.length,
-    'Contracts bet on',
-    myContractIds.length
-  )
+  // console.log(
+  //   'Got bets',
+  //   myBets.length,
+  //   'Contracts bet on',
+  //   myContractIds.length
+  // )
+  const excludeContractIds: string[] = [];
 
   if (mode === 'RESET') {
-    await cancelLimitBets(myBets)
+    // await cancelLimitBets(myBets)
     await betOnTopMarkets([])
   } else {
     // Bet on new markets.
-    await betOnTopMarkets(myContractIds)
+    await betOnTopMarkets(excludeContractIds)
   }
 }
 
 const betOnTopMarkets = async (excludeContractIds: string[]) => {
-  const markets = await getAllMarkets()
+  // const markets = await getAllMarkets()
+  const markets = await getSomeMarkets()
   console.log('Loaded', markets.length)
 
   const openBinaryMarkets = markets
@@ -56,7 +60,15 @@ const betOnTopMarkets = async (excludeContractIds: string[]) => {
   await batchedWaitAll(
     openBinaryMarkets.map((market) => async () => {
       const fullMarket = await getFullMarket(market.id)
-      const marketBets = fullMarket.bets.filter(
+      // console.log(fullMarket)
+
+      let bets: Bet[];
+      // bets = await getBets({ contractId: market.id });
+      bets = await getBets({ contractSlug: "will-ian-nepomniachtchi-be-the-2023"})
+      // console.log(bets)
+      // fullMarket.
+
+      const marketBets = bets.filter(
         (bet) => bet.limitProb === undefined
       )
 
@@ -93,9 +105,10 @@ const placeLimitBets = async (market: FullMarket) => {
     .map((range, i) => rangeToBets(range, amount * (i + 1)))
     .flat()
 
-  await Promise.all(
-    limitBets.map((bet) => placeBet({ ...bet, contractId: id }))
-  )
+  console.log(limitBets)
+  // await Promise.all(
+  //   limitBets.map((bet) => placeBet({ ...bet, contractId: id }))
+  // )
   return limitBets
 }
 
