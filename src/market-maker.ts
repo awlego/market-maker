@@ -7,6 +7,7 @@ import {
   getBets,
   getSomeMarkets,
   getFullMarket,
+  getMarketBySlug,
   placeBet,
 } from './api'
 import type { Bet, FullMarket } from './types'
@@ -44,42 +45,57 @@ const main = async () => {
 
 const betOnTopMarkets = async (excludeContractIds: string[]) => {
   // const markets = await getAllMarkets()
-  const markets = await getSomeMarkets()
-  console.log('Loaded', markets.length)
+  // const markets = await getSomeMarkets()
+  // console.log('Loaded', markets.length)
 
-  const openBinaryMarkets = markets
-    .filter((market) => market.outcomeType === 'BINARY')
-    .filter(
-      (market) =>
-        !market.isResolved && market.closeTime && market.closeTime > Date.now()
-    )
-    .filter((market) => !excludeContractIds.includes(market.id))
+  // const openBinaryMarkets = markets
+  //   .filter((market) => market.outcomeType === 'BINARY')
+  //   .filter(
+  //     (market) =>
+  //       !market.isResolved && market.closeTime && market.closeTime > Date.now()
+  //   )
+  //   .filter((market) => !excludeContractIds.includes(market.id))
 
-  console.log('Open binary markets', openBinaryMarkets.length)
+  // console.log('Open binary markets', openBinaryMarkets.length)
 
-  await batchedWaitAll(
-    openBinaryMarkets.map((market) => async () => {
-      const fullMarket = await getFullMarket(market.id)
-      // console.log(fullMarket)
 
-      let bets: Bet[];
-      // bets = await getBets({ contractId: market.id });
-      bets = await getBets({ contractSlug: "will-ian-nepomniachtchi-be-the-2023"})
-      // console.log(bets)
-      // fullMarket.
+  const myLiteMarket = await getMarketBySlug("will-ian-nepomniachtchi-be-the-2023");
+  
+  console.log(myLiteMarket);
+  let bets: Bet[];
+  bets = await getBets({ contractSlug: "will-ian-nepomniachtchi-be-the-2023"})
+  console.log(bets.length)
+  const myFullMarket: FullMarket = {
+    ...myLiteMarket,
+    bets: bets
+  }
+  const bets2 = await placeLimitBets(myFullMarket)
+  if (bets2.length)
+    console.log('Placed orders for', myFullMarket.question, ':', bets2)
 
-      const marketBets = bets.filter(
-        (bet) => bet.limitProb === undefined
-      )
+  // await batchedWaitAll(
+  //   openBinaryMarkets.map((market) => async () => {
+  //     const fullMarket = await getFullMarket(market.id)
+  //     // console.log(fullMarket)
 
-      if (marketBets.length >= 10) {
-        const bets = await placeLimitBets(fullMarket)
-        if (bets.length)
-          console.log('Placed orders for', fullMarket.question, ':', bets)
-      }
-    }),
-    10
-  )
+  //     let bets: Bet[];
+  //     // bets = await getBets({ contractId: market.id });
+  //     bets = await getBets({ contractSlug: "will-ian-nepomniachtchi-be-the-2023"})
+  //     // console.log(bets)
+  //     // fullMarket.
+
+  //     const marketBets = bets.filter(
+  //       (bet) => bet.limitProb === undefined
+  //     )
+
+  //     if (marketBets.length >= 10) {
+  //       const bets = await placeLimitBets(fullMarket)
+  //       if (bets.length)
+  //         console.log('Placed orders for', fullMarket.question, ':', bets)
+  //     }
+  //   }),
+  //   10
+  // )
 }
 
 const cancelLimitBets = async (bets: Bet[]) => {
@@ -106,9 +122,9 @@ const placeLimitBets = async (market: FullMarket) => {
     .flat()
 
   console.log(limitBets)
-  // await Promise.all(
-  //   limitBets.map((bet) => placeBet({ ...bet, contractId: id }))
-  // )
+  await Promise.all(
+    limitBets.map((bet) => placeBet({ ...bet, contractId: id }))
+  )
   return limitBets
 }
 
@@ -156,12 +172,12 @@ const rangeToBets = (range: [number, number], amount: number) => {
     {
       outcome: 'YES' as const,
       amount: yesAmount,
-      limitProb: low,
+      limitProb: parseFloat(low.toFixed(2)),
     },
     {
       outcome: 'NO' as const,
       amount: noAmount,
-      limitProb: high,
+      limitProb: parseFloat(high.toFixed(2)),
     },
   ]
 }

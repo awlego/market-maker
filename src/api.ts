@@ -54,7 +54,7 @@ export const getSomeMarkets = async () => {
 }
 
 export const getMarketBySlug = async (slug: string) => {
-  const market: FullMarket = await fetch(`${API_URL}/slug/${slug}`).then(
+  const market: LiteMarket = await fetch(`${API_URL}/slug/${slug}`).then(
     (res) => res.json()
   )
   return market
@@ -62,7 +62,7 @@ export const getMarketBySlug = async (slug: string) => {
 
 export const getBets = async ({
   username = undefined,
-  limit = 100,
+  limit = 1000,
   contractId = undefined,
   contractSlug = undefined,
   before = undefined,
@@ -109,6 +109,22 @@ export const getAllBets = async (username: string) => {
   return allBets
 }
 
+// export const placeBet = (bet: {
+//   contractId: string
+//   outcome: 'YES' | 'NO'
+//   amount: number
+//   limitProb?: number
+// }) => {
+//   return fetch(`${API_URL}/bet`, {
+//     method: 'POST',
+//     headers: {
+//       'Content-Type': 'application/json',
+//       Authorization: `Key ${yourKey}`,
+//     },
+//     body: JSON.stringify(bet),
+//   }).then((res) => res.json())
+// }
+
 export const placeBet = (bet: {
   contractId: string
   outcome: 'YES' | 'NO'
@@ -118,11 +134,17 @@ export const placeBet = (bet: {
   return fetch(`${API_URL}/bet`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Key ${yourKey}`,
-    },
-    body: JSON.stringify(bet),
-  }).then((res) => res.json())
+    'Content-Type': 'application/json',
+    Authorization: `Key ${yourKey}`,
+  },
+  body: JSON.stringify(bet),
+  })
+  .then((res) => res.json())
+  .then((data) => {
+  console.log(data) // Log the result of the API
+  return data // Return the result of the API
+  })
+  .catch((error) => console.error(error)) // Log any errors that occur
 }
 
 export const cancelBet = (betId: string) => {
